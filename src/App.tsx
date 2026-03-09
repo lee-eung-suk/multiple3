@@ -329,38 +329,116 @@ function DiceBox({ value, label, isRolling, borderColor, textColor, bgColor, sha
   bgColor: string,
   shadowColor: string
 }) {
+  const [displayValue, setDisplayValue] = React.useState(value);
+
+  React.useEffect(() => {
+    let interval: any;
+    if (isRolling) {
+      interval = setInterval(() => {
+        const isThreeDigit = label.includes("세 자리");
+        if (isThreeDigit) {
+          setDisplayValue(Math.floor(Math.random() * 900) + 100);
+        } else {
+          setDisplayValue(Math.floor(Math.random() * 90) + 10);
+        }
+      }, 50);
+    } else {
+      setDisplayValue(value);
+    }
+    return () => clearInterval(interval);
+  }, [isRolling, value, label]);
+
+  // Face styles for a 3D cube
+  // We use a fixed size for the 3D calculation but keep it responsive via scale or container
+  const size = "w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64";
+  
+  // To make it look like a cube, we need to translate faces by half the width
+  // Since we use responsive classes, we'll use a CSS variable or just approximate with percentages if possible,
+  // but for a true cube, fixed units or calc() based on a base size is better.
+  // Let's use a base size and scale it.
+  
   return (
-    <div className="flex flex-col items-center gap-2 md:gap-4">
-      <motion.div
-        className={`relative w-32 h-32 sm:w-48 sm:h-48 md:w-64 md:h-64 rounded-xl md:rounded-2xl flex items-center justify-center border-4 border-b-[8px] md:border-b-[12px] ${borderColor} ${bgColor} ${textColor} shadow-lg md:shadow-xl`}
-        animate={isRolling ? {
-          rotateX: [0, 180, 360],
-          rotateY: [0, 180, 360],
-          scale: [1, 0.9, 1],
-          y: [0, -20, 0]
-        } : {
-          rotateX: 0,
-          rotateY: 0,
-          scale: 1,
-          y: 0
-        }}
-        transition={{ 
-          duration: 0.6, 
-          ease: "easeInOut"
-        }}
-        style={{ perspective: 1000 }}
+    <div className="flex flex-col items-center gap-4 md:gap-8">
+      <div 
+        className={`relative ${size} perspective-1200`}
+        style={{ 
+          // @ts-ignore
+          '--cube-z': 'clamp(64px, 20vw, 128px)' 
+        } as React.CSSProperties}
       >
-        {/* Inner Content */}
-        <motion.span 
-          className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter"
-          animate={isRolling ? { opacity: 0.5, filter: "blur(2px)" } : { opacity: 1, filter: "blur(0px)" }}
+        <motion.div
+          className="w-full h-full relative preserve-3d"
+          animate={isRolling ? {
+            rotateX: [0, 720, 1440],
+            rotateY: [0, 1080, 2160],
+            rotateZ: [0, 360, 720],
+            y: [0, -100, 0, -50, 0],
+            scale: [1, 1.2, 0.8, 1.1, 1]
+          } : {
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            y: 0,
+            scale: 1
+          }}
+          transition={{ 
+            duration: 0.8, 
+            ease: "easeInOut"
+          }}
         >
-          {value}
-        </motion.span>
-        
-        {/* Shine effect */}
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/60 to-transparent pointer-events-none" />
-      </motion.div>
+          {/* Front Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 border-b-8 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'translateZ(var(--cube-z))' }}
+          >
+            <span className="text-4xl sm:text-6xl md:text-8xl font-black tracking-tighter">{displayValue}</span>
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/40 to-transparent pointer-events-none" />
+          </div>
+
+          {/* Back Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'rotateY(180deg) translateZ(var(--cube-z))' }}
+          >
+            <span className="text-4xl sm:text-6xl md:text-8xl font-black opacity-20">?</span>
+          </div>
+
+          {/* Right Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'rotateY(90deg) translateZ(var(--cube-z))' }}
+          >
+             <Dices className="w-12 h-12 md:w-20 md:h-20 opacity-20" />
+          </div>
+
+          {/* Left Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'rotateY(-90deg) translateZ(var(--cube-z))' }}
+          >
+             <Sparkles className="w-12 h-12 md:w-20 md:h-20 opacity-20" />
+          </div>
+
+          {/* Top Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'rotateX(90deg) translateZ(var(--cube-z))' }}
+          >
+             <div className="w-4 h-4 md:w-8 md:h-8 rounded-full bg-current opacity-20" />
+          </div>
+
+          {/* Bottom Face */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center border-4 ${borderColor} ${bgColor} ${textColor} rounded-2xl shadow-xl backface-hidden`}
+            style={{ transform: 'rotateX(-90deg) translateZ(var(--cube-z))' }}
+          >
+             <div className="grid grid-cols-2 gap-2 md:gap-4 opacity-20">
+                <div className="w-3 h-3 md:w-6 md:h-6 rounded-full bg-current" />
+                <div className="w-3 h-3 md:w-6 md:h-6 rounded-full bg-current" />
+             </div>
+          </div>
+        </motion.div>
+      </div>
       
       <span className="text-gray-500 font-bold text-sm md:text-lg uppercase tracking-wider">
         {label}
